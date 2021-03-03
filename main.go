@@ -13,13 +13,13 @@ func failOnError(err error, msg string) {
 	}
 }
 
-func main() {
-
+func init() {
 	// Load configuration
-	err := config.LoadConfig(".")
+	err := config.LoadConfig(".env")
 	failOnError(err, "An error occured when loading .env")
-	log.Println(config.Config.RabbitMQUri)
-	// MongoDB connection
+}
+
+func main() {
 
 	// RabbitMQ Connection
 	entrypoints.InitBroker()

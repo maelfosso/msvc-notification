@@ -1,9 +1,12 @@
 package entrypoints
 
 import (
+	"encoding/base64"
 	"fmt"
 	"log"
+	"net/mail"
 	"net/smtp"
+	"strings"
 
 	"github.com/streadway/amqp"
 
@@ -34,14 +37,37 @@ func NewRequest(to []string, subject, body string) *Request {
 	}
 }
 
+func encodeRFC2047(String string) string {
+	// use mail's rfc2047 to encode any string
+	addr := mail.Address{String, ""}
+	return strings.Trim(addr.String(), " <>")
+}
+
 // SendEmail sends email
 func (r *Request) SendEmail(auth smtp.Auth) (bool, error) {
-	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
-	subject := "Subject: " + r.subject + "!\n"
-	msg := []byte(subject + mime + "\n" + r.body)
-	addr := "smtp.mailtrap.io:25"
 
-	if err := smtp.SendMail(addr, auth, "Guitou <notification@guitou.cm>", r.to, msg); err != nil {
+	// mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
+	// msg := []byte(to + subject + mime + "\n" + r.body)
+	// subject := "Subject: " + r.subject + "!\r\n"
+	// to := fmt.Sprintf("To: %s\r\n", r.to[0])
+	from := mail.Address{Name: "Guitou", Address: "mael.fosso@guitou.cm"}
+	addr := fmt.Sprintf("%s:%s", config.GetConfig().Mail.Host, config.GetConfig().Mail.Port)
+
+	header := make(map[string]string)
+	header["From"] = from.String()
+	header["To"] = r.to[0]
+	header["Subject"] = r.subject
+	header["MIME-Version"] = "1.0"
+	header["Content-Type"] = "text/html; charset=\"utf-8\""
+	header["Content-Transfer-Encoding"] = "base64"
+
+	message := ""
+	for k, v := range header {
+		message += fmt.Sprintf("%s: %s\r\n", k, v)
+	}
+	message += "\r\n" + base64.StdEncoding.EncodeToString([]byte(r.body))
+
+	if err := smtp.SendMail(addr, auth, from.Address, r.to, []byte(message)); err != nil {
 		return false, err
 	}
 	return true, nil
@@ -49,7 +75,8 @@ func (r *Request) SendEmail(auth smtp.Auth) (bool, error) {
 
 // InitBroker init the connection with AMQP
 func InitBroker() {
-	conn, err := amqp.Dial(config.Config.RabbitMQUri)
+	log.Println("RabbitMQ ", config.GetConfig().RabbitMQUri)
+	conn, err := amqp.Dial(config.GetConfig().RabbitMQUri)
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
 
@@ -91,14 +118,19 @@ func InitBroker() {
 			}
 			log.Println("DATA", data)
 
-			auth := smtp.PlainAuth("", "39150c7f22ec69", "55963de64c6833", "smtp.mailtrap.io")
+			log.Println(config.GetConfig().Mail.Username, config.GetConfig().Mail.Password, config.GetConfig().Mail.Host)
+			auth := smtp.PlainAuth("", config.GetConfig().Mail.Username, config.GetConfig().Mail.Password, config.GetConfig().Mail.Host)
+
 			body, err := data.ParseTemplate("templates/guitou.project.user.invited.html")
 			if err == nil {
 				subject := fmt.Sprintf("Join %s", data.ProjectName)
 				r := NewRequest([]string{data.UserEmail}, subject, body)
 
-				ok, _ := r.SendEmail(auth)
-				log.Println(ok)
+				// ok, err := r.SendEmail(auth)
+				// log.Println(ok)
+				// log.Println(err)
+
+				go r.SendEmail(auth)
 			} else {
 				log.Println("ERROR occured when sending the e-mail")
 				log.Println(err)

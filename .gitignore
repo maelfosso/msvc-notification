@@ -85,3 +85,9 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# No ENV Files
+.env
+.env.development
+.env.production
+

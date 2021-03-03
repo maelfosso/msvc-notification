@@ -1,29 +1,47 @@
 package config
 
 import (
-	"github.com/spf13/viper"
+	"github.com/ilyakaznacheev/cleanenv"
 )
 
-type config struct {
-	RabbitMQUri string `mapstructure:"RABBITMQ_URI"`
+type mailConfig struct {
+	Host     string `env:"MAIL_HOST"`
+	Username string `env:"MAIL_USERNAME"`
+	Password string `env:"MAIL_PASSWORD"`
+	// APIKey   string `env:"MAIL_API_KEY"`
+}
+
+// Config is a application configuration structure
+type Config struct {
+	EnvMode     string `env:"ENV_MODE" env-required:"true"`
+	WebAppURL   string `env:"WEBAPP_URL" env-required:"true"`
+	RabbitMQUri string `env:"RABBITMQ_URI" env-required:"true"`
+
+	Mail struct {
+		Host     string `env:"MAIL_HOST"`
+		Port     string `env:"MAIL_PORT"`
+		Username string `env:"MAIL_USERNAME"`
+		Password string `env:"MAIL_PASSWORD"`
+		APIKey   string `env:"MAIL_API_KEY"`
+	}
 }
 
 // Config contains all the env variable
-var Config *config
+var config Config
 
 // LoadConfig Load
 func LoadConfig(path string) (err error) {
-	viper.AddConfigPath(path)
-	viper.SetConfigName(".env")
-	viper.SetConfigType("env")
+	// err = cleanenv.ReadEnv(&config)
+	err = cleanenv.ReadConfig(path, &config)
 
-	viper.AutomaticEnv()
-
-	err = viper.ReadInConfig()
 	if err != nil {
 		return
 	}
 
-	err = viper.Unmarshal(&Config)
 	return
+}
+
+// GetConfig returns the App configuration
+func GetConfig() Config {
+	return config
 }

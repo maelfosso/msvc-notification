@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"guitou.com/notification-msvc/config"
 )
 
 // Data is generic for all Data
@@ -40,6 +41,18 @@ func (data *ProjectInvitationData) ParseData(body []byte) error {
 	return nil
 }
 
+// GetTemplateData from JSON
+func (data *ProjectInvitationData) GetTemplateData() map[string]string {
+	return map[string]string{
+		"WebAppHost": config.GetConfig().WebAppURL,
+
+		"ProjectID":    data.ProjectID,
+		"ProjectName":  data.ProjectName,
+		"UserEmail":    data.UserEmail,
+		"InvitationID": data.InvitationID,
+	}
+}
+
 // ParseTemplate load the corresponding HTML Template
 func (data *ProjectInvitationData) ParseTemplate(templateFileName string) (string, error) {
 	log.Println("Project ID", data.ProjectID)
@@ -49,7 +62,10 @@ func (data *ProjectInvitationData) ParseTemplate(templateFileName string) (strin
 		return "", err
 	}
 	buf := new(bytes.Buffer)
-	if err = t.Execute(buf, data); err != nil {
+	// var params interface{} = data
+	// params["WebappURL"] = config.Config.WebAppURL
+
+	if err = t.Execute(buf, data.GetTemplateData()); err != nil {
 		return "", err
 	}
 
