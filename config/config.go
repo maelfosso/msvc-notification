@@ -31,8 +31,8 @@ var config Config
 
 // LoadConfig Load
 func LoadConfig(path string) (err error) {
-	// err = cleanenv.ReadEnv(&config)
-	err = cleanenv.ReadConfig(path, &config)
+	err = cleanenv.ReadEnv(&config)
+	// err = cleanenv.ReadConfig(path, &config)
 
 	if err != nil {
 		return
