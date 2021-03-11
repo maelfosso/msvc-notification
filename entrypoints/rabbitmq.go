@@ -68,8 +68,12 @@ func (r *Request) SendEmail(auth smtp.Auth) (bool, error) {
 	message += "\r\n" + base64.StdEncoding.EncodeToString([]byte(r.body))
 
 	if err := smtp.SendMail(addr, auth, from.Address, r.to, []byte(message)); err != nil {
+		log.Println(false, err)
+
 		return false, err
 	}
+
+	log.Println(true, nil)
 	return true, nil
 }
 
