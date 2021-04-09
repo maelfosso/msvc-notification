@@ -27,24 +27,3 @@ COPY . .
 RUN go build -o main .
 
 CMD ["/src/main"]
-
-# Build a small image
-# FROM busybox
-
-# COPY --from=builder /dist/main /
-
-# Command to run
-# ENTRYPOINT ["/main"]
-
-# FROM golang:1.15.6
-# # github.com/maelfosso/msvc-notification
-# WORKDIR /go/src/guitou.com/notification-msvc
-# RUN go get -d -v golang.org/x/net/html  
-# COPY main.go .
-# RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
-
-# FROM alpine:latest  
-# RUN apk --no-cache add ca-certificates
-# WORKDIR /root/
-# COPY --from=0 /go/src/guitou.com/notification-msvc .
-# CMD ["./main"]  
